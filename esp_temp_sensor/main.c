@@ -34,7 +34,7 @@ void ICACHE_FLASH_ATTR ping(void *arg) {
     mqttSend(pSession, NULL, 0, MQTT_MSG_TYPE_PINGREQ);
     os_timer_disarm(&pingTimer);
     os_timer_setfn(&pingTimer, (os_timer_func_t *)ping, arg);
-    os_timer_arm(&pingTimer, 1000, 0);
+    os_timer_arm(&pingTimer, 5000, 0);
 }
 
 void ICACHE_FLASH_ATTR con(void *arg) {
@@ -46,7 +46,7 @@ void ICACHE_FLASH_ATTR con(void *arg) {
 
     os_timer_disarm(&pingTimer);
     os_timer_setfn(&pingTimer, (os_timer_func_t *)ping, arg);
-    os_timer_arm(&pingTimer, 1000, 0);
+    os_timer_arm(&pingTimer, 5000, 0);
 }
 
 void ICACHE_FLASH_ATTR sub(void *arg) {
@@ -80,7 +80,7 @@ void ICACHE_FLASH_ATTR pubuint(void *arg) {
     mqttSend(pSession, (uint8_t *)dataStr, dataLen, MQTT_MSG_TYPE_PUBLISH);
     os_timer_disarm(&pingTimer);
     os_timer_setfn(&pingTimer, (os_timer_func_t *)ping, arg);
-    os_timer_arm(&pingTimer, 1000, 0);
+    os_timer_arm(&pingTimer, 5000, 0);
 }
 
 void ICACHE_FLASH_ATTR pubfloat(void *arg) {
@@ -98,7 +98,7 @@ void ICACHE_FLASH_ATTR pubfloat(void *arg) {
     mqttSend(pSession, (uint8_t *)dataStr, dataLen, MQTT_MSG_TYPE_PUBLISH);
     os_timer_disarm(&pingTimer);
     os_timer_setfn(&pingTimer, (os_timer_func_t *)ping, arg);
-    os_timer_arm(&pingTimer, 1000, 0);
+    os_timer_arm(&pingTimer, 5000, 0);
 }
 
 blink_timerfunc(void *arg, int val)
@@ -107,25 +107,32 @@ blink_timerfunc(void *arg, int val)
   blink_packet Data;
   blink_packet *pData = &Data;
   mqtt_session_t *pSession = (mqtt_session_t *)arg;
+  pData->state += (uint8_t)0;
 
   //Do blinky stuff
   if (GPIO_REG_READ(GPIO_OUT_ADDRESS) & (1 << blink_pin))
   {
     // set gpio low
     gpio_output_set(0, (1 << blink_pin), 0, 0);
-    os_printf("LED state - %s IP: %d.%d.%d.%d\n", "LOW", IP2STR(&info.ip.addr));
-    pData->state += 0;
+    pData->state += LED_STATE_LOW;
+    #ifdef DEBUG
+      os_printf("LED state - %d - %s IP: %d.%d.%d.%d\n", pData->state, "LOW", IP2STR(&info.ip.addr));
+    #endif
     pSession->userData = (void *)&pData->state;
     pubuint(pSession);
+    return;
   }
   else
   {
     // set gpio high
     gpio_output_set((1 << blink_pin), 0, 0, 0);
-    os_printf("LED state - %s IP: %d.%d.%d.%d\n", "HIGH", IP2STR(&info.ip.addr));
-    pData->state += 1;
+    #ifdef DEBUG
+      os_printf("LED state - %d - %s IP: %d.%d.%d.%d\n", pData->state, "HIGH", IP2STR(&info.ip.addr));
+    #endif
+    pData->state += LED_STATE_HIGH;
     pSession->userData = (void *)&pData->state;
     pubuint(pSession);
+    return;
   }
 }
 
@@ -136,9 +143,11 @@ init_mqtt(void) {
   LOCAL mqtt_session_t *pGlobalSession = &globalSession;
   pGlobalSession->port = 1883; // mqtt port
   os_memcpy(pGlobalSession->ip, mqtt_ip, 4);
-  pGlobalSession->topic_name_len = ioTopic_len;
-  pGlobalSession->topic_name = os_zalloc(sizeof(uint8_t) * pGlobalSession->topic_name_len);
-  os_memcpy(pGlobalSession->topic_name, ioTopic, pGlobalSession->topic_name_len);
+  /*pGlobalSession->topic_name_len = ioTopic_len;
+  pGlobalSession->topic_name = os_zalloc(sizeof(uint8_t) * pGlobalSession->topic_name_len);*/
+  pGlobalSession->topic_name_len = 4;
+  pGlobalSession->topic_name = "test";
+  os_memcpy(pGlobalSession->topic_name, /*ioTopic*/"test", pGlobalSession->topic_name_len);
   os_printf("MQTT Memory Opts Set");
 
   os_printf("Arm the TCP timer\n");
