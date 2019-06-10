@@ -1,5 +1,8 @@
 #include "os_type.h"
 
+#define WIFI_LED_IO_MUX     PERIPHS_IO_MUX_GPIO0_U
+#define WIFI_LED_IO_NUM     0
+#define WIFI_LED_IO_FUNC    FUNC_GPIO0
 #define DEBUG 1
 
 typedef struct {

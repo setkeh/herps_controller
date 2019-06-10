@@ -114,7 +114,7 @@ blink_timerfunc(void *arg, int val)
   {
     // set gpio low
     gpio_output_set(0, (1 << blink_pin), 0, 0);
-    pData->state += (uint8_t)0;
+    pData->state = (uint8_t)0;
     #ifdef DEBUG
       os_printf("LED state - %d - %s IP: %d.%d.%d.%d\n", pData->state, "LOW", IP2STR(&info.ip.addr));
     #endif
@@ -130,7 +130,7 @@ blink_timerfunc(void *arg, int val)
     #ifdef DEBUG
       os_printf("LED state - %d - %s IP: %d.%d.%d.%d\n", pData->state, "HIGH", IP2STR(&info.ip.addr));
     #endif
-    pData->state += (uint8_t)1;
+    pData->state = (uint8_t)1;
     pSession->userData = (void *)&pData->state;
     pubuint(pSession);
     pData->state = 0;
@@ -189,6 +189,7 @@ user_init()
 {
   uart_div_modify(0, UART_CLK_FREQ / 115200);
   system_set_os_print(TRUE);
+  wifi_status_led_install(WIFI_LED_IO_NUM, WIFI_LED_IO_MUX, FUNC_GPIO0);
 
   wifi_init();
 
